@@ -26,10 +26,11 @@ public class GridCalendarView extends LinearLayout implements View.OnClickListen
     private TextView textViewYear,textViewMonth;
     public GridCalendarView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        // 设置排列方式
         setOrientation(LinearLayout.VERTICAL);
-        LayoutParams llParams =
-                new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-        View view = LayoutInflater.from(context).inflate(R.layout.display_grid_date,null);
+        // 设置控件大小
+        LayoutParams llParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        View view = LayoutInflater.from(context).inflate(R.layout.display_grid_date, null);
         weekView = new WeekView(context,null);
         gridMonthView = new GridMonthView(context,null);
         addView(view,llParams);
