@@ -20,11 +20,18 @@ public class WeekView extends View {
     private String[] weekString = new String[]{"日","一","二","三","四","五","六"};
     public WeekView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        // 屏幕密度
         mDisplayMetrics = getResources().getDisplayMetrics();
         paint = new Paint();
+        // 默认主题(创建一个类, 把需要使用到的颜色封装起来)
         weekTheme = new DefaultWeekTheme();
     }
 
+    /**
+     * 测量
+     * @param widthMeasureSpec
+     * @param heightMeasureSpec
+     */
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
@@ -64,7 +71,8 @@ public class WeekView extends View {
             int fontWidth = (int) paint.measureText(text);
             int startX = columnWidth * i + (columnWidth - fontWidth)/2;
             int startY = (int) (height/2 - (paint.ascent() + paint.descent())/2);
-            if(text.indexOf("日") > -1|| text.indexOf("六") > -1){
+            // 如果文字中包含日, 六, 单独设置颜色
+            if(text.contains("日") || text.contains("六")){
                 paint.setColor(weekTheme.colorWeekend());
             }else{
                 paint.setColor(weekTheme.colorWeekday());

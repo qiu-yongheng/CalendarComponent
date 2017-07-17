@@ -24,15 +24,21 @@ public class GridCalendarView extends LinearLayout implements View.OnClickListen
     private WeekView weekView;
     private GridMonthView gridMonthView;
     private TextView textViewYear,textViewMonth;
+
     public GridCalendarView(Context context, AttributeSet attrs) {
         super(context, attrs);
         // 设置排列方式
         setOrientation(LinearLayout.VERTICAL);
         // 设置控件大小
         LayoutParams llParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        // 日历头部控件, 前进后退当前月份
         View view = LayoutInflater.from(context).inflate(R.layout.display_grid_date, null);
+        // 日期
         weekView = new WeekView(context,null);
+        // 日历控件
         gridMonthView = new GridMonthView(context,null);
+
+        // 添加控件到GridCalendarView
         addView(view,llParams);
         addView(weekView,llParams);
         addView(gridMonthView,llParams);
@@ -41,6 +47,7 @@ public class GridCalendarView extends LinearLayout implements View.OnClickListen
         view.findViewById(R.id.right).setOnClickListener(this);
         textViewYear = (TextView) view.findViewById(R.id.year);
         textViewMonth = (TextView) view.findViewById(R.id.month);
+
         gridMonthView.setMonthLisener(new MonthView.IMonthLisener() {
             @Override
             public void setTextMonth() {
