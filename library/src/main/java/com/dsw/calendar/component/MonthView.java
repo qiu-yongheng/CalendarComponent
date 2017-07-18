@@ -44,23 +44,30 @@ public abstract class MonthView extends View {
 
     public MonthView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        // 像素密度
+        /** 像素密度 */
         density = getResources().getDisplayMetrics().density;
         mScroller = new Scroller(context);
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
 
-        // 获取当前时间
+        /** 获取当前时间 */
         Calendar calendar = Calendar.getInstance();
         currYear = calendar.get(Calendar.YEAR);
         currMonth = calendar.get(Calendar.MONTH);
         currDay = calendar.get(Calendar.DATE);
 
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        // 设置当前选中的时间
+
+        /** 设置当前选中的时间 */
         setSelectDate(currYear, currMonth, currDay);
+
+        /** 设置上一个月时间 */
         setLeftDate();
+        /** 设置下一个月数据 */
         setRightDate();
+        /** 初始化主题 */
         createTheme();
+
+
         baseRowSize = rowSize = theme == null ? 70 : theme.dateHeight();
         smoothMode = theme == null ? 0 : theme.smoothMode();
     }
@@ -287,7 +294,7 @@ public abstract class MonthView extends View {
     }
 
     /**
-     *
+     * 设置当前显示月份上一个月的数据, 设置默认选中日期
      */
     private void setLeftDate() {
         int year = selYear;
@@ -298,15 +305,20 @@ public abstract class MonthView extends View {
             month = 11;
         } else if (DateUtils.getMonthDays(year, month - 1) < day) {//向左滑动，当前月天数小于左边的
             //如果当前日期为该月最后一点，当向前推的时候，就需要改变选中的日期
+            /** 如果当前选中的日期, 上一个月没有, 例如3月31号, 2月没有31号, 这时在月份减一后, 获取2月最后一天默认选中 */
             month = month - 1;
             day = DateUtils.getMonthDays(year, month);
         } else {
+            /** 正常情况下, 直接月份减一就行了 */
             month = month - 1;
         }
         setSelectDate(year, month, day);
         computeDate();
     }
 
+    /**
+     * 设置当前显示月份下一个月的数据
+     */
     private void setRightDate() {
         int year = selYear;
         int month = selMonth;

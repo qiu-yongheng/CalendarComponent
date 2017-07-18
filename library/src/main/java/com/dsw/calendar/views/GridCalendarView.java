@@ -48,6 +48,7 @@ public class GridCalendarView extends LinearLayout implements View.OnClickListen
         textViewYear = (TextView) view.findViewById(R.id.year);
         textViewMonth = (TextView) view.findViewById(R.id.month);
 
+        // TODO 不显示当前年月信息, 需检查源码
         gridMonthView.setMonthLisener(new MonthView.IMonthLisener() {
             @Override
             public void setTextMonth() {

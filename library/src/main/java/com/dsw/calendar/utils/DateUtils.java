@@ -2,12 +2,15 @@ package com.dsw.calendar.utils;
 
 import java.util.Calendar;
 
-import android.util.Log;
-
+/**
+ *
+ */
 public class DateUtils {
 	/**
-     * 通过年份和月份 得到当月的日子
-     * 
+     * 通过年份和月份 得到当月有多少天
+     * 1, 3, 5, 7, 8, 10, 12 -> 31天
+	 * 2, 6, 9, 11 -> 30天
+	 * 2月算闰年
      * @param year
      * @param month
      * @return
