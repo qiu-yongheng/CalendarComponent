@@ -18,9 +18,11 @@ public class GridCalendarActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_grid_calendar_view);
+
         Calendar calendar = Calendar.getInstance();
         int currYear = calendar.get(Calendar.YEAR);
         int currMonth = calendar.get(Calendar.MONTH)+ 1;
+
         List<CalendarInfo> list = new ArrayList<CalendarInfo>();
         list.add(new CalendarInfo(currYear,currMonth,4,"￥1200"));
         list.add(new CalendarInfo(currYear,currMonth,6,"￥1200"));
@@ -31,6 +33,7 @@ public class GridCalendarActivity extends Activity {
         list.add(new CalendarInfo(currYear,currMonth,11,"￥1200",1));
         list.add(new CalendarInfo(currYear,currMonth,19,"￥1200",2));
         list.add(new CalendarInfo(currYear,currMonth,21,"￥1200",1));
+
         gridCalendarView = (GridCalendarView) findViewById(R.id.gridMonthView);
         gridCalendarView.setCalendarInfos(list);
         gridCalendarView.setDateClick(new MonthView.IDateClick(){
@@ -38,6 +41,13 @@ public class GridCalendarActivity extends Activity {
             @Override
             public void onClickOnDate(int year, int month, int day) {
                 Toast.makeText(GridCalendarActivity.this,"点击了" +  year + "-" + month + "-" + day,Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        gridCalendarView.SetOnDateChangeListener(new GridCalendarView.OnDateListener() {
+            @Override
+            public void onChange(int year, int month) {
+                Toast.makeText(GridCalendarActivity.this, year + "年" + month + "月", Toast.LENGTH_SHORT).show();
             }
         });
     }

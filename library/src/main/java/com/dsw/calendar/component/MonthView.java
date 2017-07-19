@@ -18,7 +18,15 @@ import java.util.Calendar;
 import java.util.List;
 
 /**
- * Created by Administrator on 2016/7/30.
+ * 自定义日历控件
+ *
+ * 暴露以下方法给子类自定义
+ *
+ * drawLines(Canvas canvas,int rowsCount);绘制格网线
+ * drawBG(Canvas canvas,int column,int row,int day);绘制选中背景色
+ * drawDecor(Canvas canvas,int column,int row,int day);绘制事务标识符号
+ * drawRest(Canvas canvas,int column,int row,int day);绘制‘班’、‘休’
+ * drawText(Canvas canvas,int column,int row,int day);绘制日期
  */
 public abstract class MonthView extends View {
     protected int NUM_COLUMNS = 7;
@@ -46,7 +54,9 @@ public abstract class MonthView extends View {
         super(context, attrs);
         /** 像素密度 */
         density = getResources().getDisplayMetrics().density;
+
         mScroller = new Scroller(context);
+        /** 触发移动事件的最短距离，如果小于这个距离就不触发移动控件 */
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
 
         /** 获取当前时间 */
@@ -67,27 +77,43 @@ public abstract class MonthView extends View {
         /** 初始化主题 */
         createTheme();
 
-
+        /** 从主题中获取日期item高度 : 没有设置主题, 70dp; 有设置主题, 获取主题高度 */
         baseRowSize = rowSize = theme == null ? 70 : theme.dateHeight();
+        /** 滑动模式  0是渐变滑动方式，1是没有滑动方式 */
         smoothMode = theme == null ? 0 : theme.smoothMode();
     }
 
+    /**
+     * 1. 测量
+     * @param widthMeasureSpec
+     * @param heightMeasureSpec
+     */
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        /** 如果宽度不是match parent, 设置宽度 */
         if (widthMode == MeasureSpec.AT_MOST) {
             widthSize = (int) (300 * density);
         }
+
         width = widthSize;
         NUM_ROWS = 6; //本来是想根据每月的行数，动态改变控件高度，现在为了使滑动的左右两边效果相同，不适用getMonthRowNumber();
+        /** 计算高度 */
         int heightSize = (int) (NUM_ROWS * baseRowSize);
         setMeasuredDimension(widthSize, heightSize);
     }
 
+    /**
+     * 2. 绘制
+     * @param canvas
+     */
     @Override
     protected void onDraw(Canvas canvas) {
+        /** 主题颜色 */
         canvas.drawColor(theme.colorMonthView());
+
+        /** 没有滑动模式 */
         if (smoothMode == 1) {
             drawDate(canvas, selYear, selMonth, indexMonth * width, 0);
             return;
@@ -100,26 +126,49 @@ public abstract class MonthView extends View {
         drawDate(canvas, selYear, selMonth, indexMonth * width, 0);
     }
 
+    /**
+     * 绘制日期
+     * @param canvas
+     * @param year
+     * @param month
+     * @param startX
+     * @param startY
+     */
     private void drawDate(Canvas canvas, int year, int month, int startX, int startY) {
+        /** 1. 保存画布 */
         canvas.save();
+        /** 2. 平移画布, 默认X = 0, Y = 0 */
         canvas.translate(startX, startY);
+        /** 3. 日历有多少行(%7) */
         NUM_ROWS = getMonthRowNumber(year, month);
+        /** 4. 计算每列宽度 /7 */
         columnSize = getWidth() * 1.0F / NUM_COLUMNS;
+        /** 5. 计算每列高度 /6 */
         rowSize = getHeight() * 1.0F / NUM_ROWS;
+        /** 6.  */
         daysString = new int[6][7];
+        /** 7. 获取指定月有多少天 */
         int mMonthDays = DateUtils.getMonthDays(year, month);
+        /** 8. 获取指定月1号周几 */
         int weekNumber = DateUtils.getFirstDayWeek(year, month);
         int column, row;
+        /** 9. 画线(子类实现) */
         drawLines(canvas, NUM_ROWS);
+        /** 10.  */
         for (int day = 0; day < mMonthDays; day++) {
+            /* 计算是第几列 */
             column = (day + weekNumber - 1) % 7;
+            /* 计算是第几行 */
             row = (day + weekNumber - 1) / 7;
+            /* 从一号开始, 保存到二维数组 */
             daysString[row][column] = day + 1;
+
             drawBG(canvas, column, row, daysString[row][column]);
             drawDecor(canvas, column, row, year, month, daysString[row][column]);
             drawRest(canvas, column, row, year, month, daysString[row][column]);
             drawText(canvas, column, row, year, month, daysString[row][column]);
         }
+        /** 11. 还原画布 */
         canvas.restore();
     }
 
@@ -145,24 +194,38 @@ public abstract class MonthView extends View {
 
     private int lastMoveX;
 
+    /**
+     * 滑动监听
+     * @param event
+     * @return
+     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int eventCode = event.getAction();
         switch (eventCode) {
             case MotionEvent.ACTION_DOWN:
+                /** 按下, 记录开始的x, y */
                 downX = (int) event.getX();
                 downY = (int) event.getY();
                 break;
             case MotionEvent.ACTION_MOVE:
+                /** 移动 */
                 if (smoothMode == 1)
+                    /* 没有滑动特效 */
                     break;
+
                 int dx = (int) (downX - event.getX());
+
+                /* 判断是否可用平移 */
                 if (Math.abs(dx) > mTouchSlop) {
+
                     int moveX = dx + lastMoveX;
+                    /* 移动控件 */
                     smoothScrollTo(moveX, 0);
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                /** 抬起, 判断是左滑还是右滑, 重新设置当前月前后3个月数据, 调用invalidate重绘 */
                 int upX = (int) event.getX();
                 int upY = (int) event.getY();
                 if (upX - downX > 0 && Math.abs(upX - downX) > mTouchSlop * 10) {//左滑
@@ -170,6 +233,7 @@ public abstract class MonthView extends View {
                         setLeftDate();
                         indexMonth--;
                     } else {
+                        /* 没有移动效果, 跟点击一样 */
                         onLeftClick();
                     }
                 } else if (upX - downX < 0 && Math.abs(upX - downX) > mTouchSlop * 10) {//右滑
@@ -180,10 +244,14 @@ public abstract class MonthView extends View {
                         onRightClick();
                     }
                 } else if (Math.abs(upX - downX) < 10 && Math.abs(upY - downY) < 10) {//点击事件
+                    /** 在滑动事件中处理点击事件 */
                     performClick();
+                    /* 计算点击中心点坐标, 判断是在哪一列, 哪一行 */
                     doClickAction((upX + downX) / 2, (upY + downY) / 2);
                 }
+
                 if (smoothMode == 0) {
+                    // 记录控件移动后的坐标
                     lastMoveX = indexMonth * width;
                     smoothScrollTo(width * indexMonth, 0);
                 }
@@ -206,6 +274,9 @@ public abstract class MonthView extends View {
         invalidate();//这里必须调用invalidate()才能保证computeScroll()会被调用，否则不一定会刷新界面，看不到滚动效果
     }
 
+    /**
+     *
+     */
     @Override
     public void computeScroll() {
         if (mScroller.computeScrollOffset()) {
@@ -226,12 +297,25 @@ public abstract class MonthView extends View {
         selDay = day;
     }
 
+    /**
+     * 计算需要多少行来显示日期
+     * @param year
+     * @param month
+     * @return
+     */
     protected int getMonthRowNumber(int year, int month) {
+        /** 通过年月, 计算当月有多少天 */
         int monthDays = DateUtils.getMonthDays(year, month);
+        /** 通过年月, 计算当月第一天是星期几 */
         int weekNumber = DateUtils.getFirstDayWeek(year, month);
+        /** 计算需要多少行来显示日期 */
         return (monthDays + weekNumber - 1) % 7 == 0 ? (monthDays + weekNumber - 1) / 7 : (monthDays + weekNumber - 1) / 7 + 1;
     }
 
+    /**
+     * 获取外界传进来的事务数据
+     * @param calendarInfos
+     */
     public void setCalendarInfos(List<CalendarInfo> calendarInfos) {
         this.calendarInfos = calendarInfos;
         invalidate();
@@ -248,6 +332,7 @@ public abstract class MonthView extends View {
             return "";
         for (CalendarInfo calendarInfo : calendarInfos) {
             if (calendarInfo.day == day && calendarInfo.month == month + 1 && calendarInfo.year == year) {
+                // 返回选择日期的事务
                 return calendarInfo.des;
             }
         }
@@ -256,17 +341,21 @@ public abstract class MonthView extends View {
 
     /**
      * 执行点击事件
-     *
+     * 在滑动事件中初始化
      * @param x
      * @param y
      */
     private void doClickAction(int x, int y) {
+        /** 计算行列 */
         int row = (int) (y / rowSize);
         int column = (int) (x / columnSize);
+        /** 设置选中的日期 */
         setSelectDate(selYear, selMonth, daysString[row][column]);
+        /** 重绘 */
         invalidate();
         //执行activity发送过来的点击处理事件
         if (dateClick != null) {
+            /** 给子类回调处理 */
             dateClick.onClickOnDate(selYear, selMonth + 1, selDay);
         }
     }
@@ -277,6 +366,7 @@ public abstract class MonthView extends View {
     public void onLeftClick() {
         setLeftDate();
         invalidate();
+
         if (monthLisener != null) {
             monthLisener.setTextMonth();
         }
@@ -288,6 +378,7 @@ public abstract class MonthView extends View {
     public void onRightClick() {
         setRightDate();
         invalidate();
+
         if (monthLisener != null) {
             monthLisener.setTextMonth();
         }
@@ -337,28 +428,38 @@ public abstract class MonthView extends View {
         computeDate();
     }
 
+    /**
+     *
+     */
     private void computeDate() {
         if (selMonth == 0) {
+            /** 上一年 */
             leftYear = selYear - 1;
             leftMonth = 11;
             rightYear = selYear;
             rightMonth = selMonth + 1;
         } else if (selMonth == 11) {
+            /** 下一年 */
             leftYear = selYear;
             leftMonth = selMonth - 1;
             rightYear = selYear + 1;
             rightMonth = 0;
         } else {
+            /** 当年 */
             leftYear = selYear;
             leftMonth = selMonth - 1;
             rightYear = selYear;
             rightMonth = selMonth + 1;
         }
+        /**  */
         if (monthLisener != null) {
             monthLisener.setTextMonth();
         }
     }
 
+    /**
+     * 日期item的点击事件
+     */
     public void setDateClick(IDateClick dateClick) {
         this.dateClick = dateClick;
     }
@@ -371,6 +472,10 @@ public abstract class MonthView extends View {
         void setTextMonth();
     }
 
+    /**
+     * 设置时间改变监听
+     * @param monthLisener
+     */
     public void setMonthLisener(IMonthLisener monthLisener) {
         this.monthLisener = monthLisener;
     }
